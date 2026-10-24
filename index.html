@@ -1,25 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Water Drop Game</title>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clean Drop</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="game-wrapper">
-        <h1 class="game-title">Water Drop</h1>
-        <p class="game-tagline">Catch the good drops, avoid the bad ones!</p>
-        <div class="score-panel">
-            <div class="score">Score: <span id="score">0</span></div>
-            <div class="timer">Time: <span id="time">30</span>s</div>
-            <button id="start-btn">Start Game</button>
+  <main class="app">
+    <section id="screen-welcome" class="screen" aria-labelledby="welcome-title">
+      <h1 id="welcome-title" class="title">Clean Drop</h1>
+      <div class="welcome-body">
+        <h2>Welcome</h2>
+        <svg class="drop-icon" viewBox="0 0 100 130" aria-hidden="true">
+          <path d="M50 8 C50 8 12 56 12 82 a38 38 0 0 0 76 0 C88 56 50 8 50 8 Z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/>
+        </svg>
+        <button id="start-btn" class="btn" type="button">Start Game</button>
+      </div>
+      <p class="brand">charity: water</p>
+    </section>
+
+    <section id="screen-game" class="screen" aria-labelledby="game-title" hidden>
+      <h1 id="game-title" class="title">Clean Drop</h1>
+      <div class="hud">
+        <div>Time: <strong id="time">45</strong>s</div>
+        <div>Score: <strong id="score">0</strong></div>
+      </div>
+      <p class="legend">
+        <span class="legend-item"><span class="swatch clean"></span>Clean +1</span>
+        <span class="legend-item"><span class="swatch polluted"></span>Polluted -1 heart</span>
+      </p>
+      <div id="play-area" class="play-area" aria-label="Play area">
+        <div id="bucket" class="bucket" aria-hidden="true"></div>
+      </div>
+      <div id="hearts" class="hearts" role="img" aria-label="3 hearts left">
+        <span class="heart">&#9829;</span><span class="heart">&#9829;</span><span class="heart">&#9829;</span>
+      </div>
+      <p class="hint">Drag left or right to catch drops</p>
+      <p class="brand">charity: water</p>
+    </section>
+
+    <section id="screen-results" class="screen" aria-labelledby="result-title" hidden>
+      <h1 class="title">Clean Drop</h1>
+      <div class="welcome-body">
+        <h2 id="result-title">Game Over</h2>
+        <dl class="stats">
+          <div><dt>Final score</dt><dd id="final-score">0</dd></div>
+          <div><dt>Clean drops collected</dt><dd id="final-clean">0</dd></div>
+          <div><dt>Time survived</dt><dd id="final-time">0s</dd></div>
+        </dl>
+        <div class="actions">
+          <button id="again-btn" class="btn" type="button">Play Again</button>
+          <button id="home-btn" class="btn secondary" type="button">Home</button>
         </div>
-        
-        <div id="game-container">
-        </div>
-    </div>
-    
-    <script src="script.js"></script>
+        <p class="message">Clean water changes lives.</p>
+      </div>
+      <p class="brand">charity: water</p>
+    </section>
+  </main>
+  <script src="script.js"></script>
 </body>
 </html>
