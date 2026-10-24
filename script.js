@@ -80,6 +80,28 @@ function cleanup() {
   drops.forEach((d) => d.el.remove());
   drops = [];
   playArea.querySelectorAll(".splash").forEach((s) => s.remove());
+  document.querySelectorAll(".fx").forEach((f) => f.remove());
+  screens.results.classList.remove("win", "lose");
+}
+
+function dramaticEnd(won) {
+  screens.results.classList.add(won ? "win" : "lose");
+  const fx = document.createElement("div");
+  fx.className = "fx " + (won ? "win" : "lose");
+  fx.setAttribute("aria-hidden", "true");
+  if (won) {
+    const colors = ["#ffd91a", "#4169e1", "#e8141c", "#3aa0ff", "#fff"];
+    for (let i = 0; i < 60; i++) {
+      const c = document.createElement("span");
+      c.style.left = Math.random() * 100 + "%";
+      c.style.background = colors[i % colors.length];
+      c.style.setProperty("--dx", Math.random() * 160 - 80 + "px");
+      c.style.animationDelay = Math.random() * 0.6 + "s";
+      c.style.animationDuration = 2 + Math.random() * 1.5 + "s";
+      fx.appendChild(c);
+    }
+  }
+  document.body.appendChild(fx);
 }
 
 function onPointerDown(e) {
@@ -224,6 +246,7 @@ function endRound(won) {
   $("final-clean").textContent = clean;
   $("final-time").textContent = elapsed.toFixed(1) + "s";
   showScreen("results");
+  dramaticEnd(won);
   $("again-btn").focus();
 }
 
@@ -235,4 +258,5 @@ function goHome() {
 
 $("start-btn").addEventListener("click", startRound);
 $("again-btn").addEventListener("click", startRound);
+$("reset-btn").addEventListener("click", startRound);
 $("home-btn").addEventListener("click", goHome);

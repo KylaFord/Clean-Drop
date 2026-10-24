@@ -62,6 +62,7 @@ body {
   cursor: pointer;
 }
 .btn.secondary { background: var(--yellow); color: var(--ink); border-color: var(--ink); }
+.btn.small { padding: 6px 18px; min-width: 0; }
 .btn:focus-visible { outline: 3px solid var(--green); outline-offset: 2px; }
 
 .actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
@@ -140,6 +141,34 @@ body {
 
 .hint { margin: 0; font-size: .9rem; color: #555; }
 
+.fx { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 10; }
+.fx::before { content: ""; position: absolute; inset: 0; animation: flash 1s ease-out forwards; }
+.fx.win::before { background: radial-gradient(circle, #fff 0%, var(--yellow) 60%); }
+.fx.lose::before { background: radial-gradient(circle, transparent 20%, #a00a10 100%); animation-duration: 1.6s; }
+.fx span {
+  position: absolute;
+  top: -20px;
+  width: 10px;
+  height: 16px;
+  animation: confetti 3s linear forwards;
+}
+
+.screen.win .title, .screen.win h2 { animation: pop .8s cubic-bezier(.2, 1.6, .4, 1); }
+.screen.win h2 { color: #1f3fae; font-size: 2.2rem; }
+.screen.lose { animation: crash .6s; }
+.screen.lose h2 { color: #a00a10; font-size: 2.2rem; animation: slam .5s ease-in; }
+
+@keyframes flash { from { opacity: 1; } to { opacity: 0; } }
+@keyframes confetti {
+  from { transform: translate(0, 0) rotate(0); opacity: 1; }
+  to { transform: translate(var(--dx), 105vh) rotate(720deg); opacity: 1; }
+}
+@keyframes pop { 0% { transform: scale(.2); } 100% { transform: scale(1); } }
+@keyframes slam { 0% { transform: scale(3); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes crash {
+  10%, 50%, 90% { transform: translate(-12px, 6px); }
+  30%, 70% { transform: translate(12px, -6px); }
+}
 @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 @keyframes splash { from { opacity: 1; transform: scale(.4); } to { opacity: 0; transform: scale(1.4) translateY(-8px); } }
 @keyframes pulse { 50% { transform: scale(1.5); } }
@@ -152,4 +181,5 @@ body {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .splash { opacity: .8; }
+  .fx { display: none; }
 }
