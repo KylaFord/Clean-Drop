@@ -15,22 +15,50 @@
         <svg class="drop-icon" viewBox="0 0 100 130" aria-hidden="true">
           <path d="M50 8 C50 8 12 56 12 82 a38 38 0 0 0 76 0 C88 56 50 8 50 8 Z" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round"/>
         </svg>
+        <fieldset class="difficulty-picker">
+          <legend>Choose your challenge</legend>
+          <div class="difficulty-options">
+            <label class="difficulty-option">
+              <input type="radio" name="difficulty" value="easy">
+              <span class="difficulty-name">Easy <span aria-hidden="true">☺️</span></span>
+              <span class="difficulty-target">16 drops</span>
+            </label>
+            <label class="difficulty-option">
+              <input type="radio" name="difficulty" value="normal" checked>
+              <span class="difficulty-name">Normal <span aria-hidden="true">😅</span></span>
+              <span class="difficulty-target">24 drops</span>
+            </label>
+            <label class="difficulty-option">
+              <input type="radio" name="difficulty" value="hard">
+              <span class="difficulty-name">Hard <span aria-hidden="true">🥵</span></span>
+              <span class="difficulty-target">32 drops</span>
+            </label>
+          </div>
+        </fieldset>
         <button id="start-btn" class="btn" type="button">Start Game</button>
       </div>
-      <p class="brand">charity: water</p>
     </section>
 
     <section id="screen-game" class="screen" aria-labelledby="game-title" hidden>
       <h1 id="game-title" class="title">Clean Drop</h1>
       <div class="hud">
         <div>Time: <strong id="time">45</strong>s</div>
-        <div>Score: <strong id="score">0</strong></div>
+        <div>Score: <strong id="score">0 / 24</strong></div>
       </div>
+      <p id="milestone" class="milestone" role="status" aria-live="polite" aria-atomic="true"></p>
       <p class="legend">
         <span class="legend-item"><span class="swatch clean"></span>Clean +1</span>
         <span class="legend-item"><span class="swatch polluted"></span>Polluted -1 heart</span>
       </p>
       <div id="play-area" class="play-area" aria-label="Play area">
+        <div class="rain-scene" aria-hidden="true">
+          <span class="sun-glow"></span>
+          <span class="rain-cloud cloud-one"></span>
+          <span class="rain-cloud cloud-two"></span>
+          <span class="rain-cloud cloud-smog"></span>
+          <span class="landscape hill-back"></span>
+          <span class="landscape hill-front"></span>
+        </div>
         <div id="bucket" class="bucket" aria-hidden="true"></div>
       </div>
       <div id="hearts" class="hearts" role="img" aria-label="3 hearts left">
@@ -38,7 +66,6 @@
       </div>
       <p class="hint">Drag left or right to catch drops</p>
       <button id="reset-btn" class="btn secondary small" type="button">Reset</button>
-      <p class="brand">charity: water</p>
     </section>
 
     <section id="screen-results" class="screen" aria-labelledby="result-title" hidden>
@@ -49,6 +76,7 @@
           <div><dt>Final score</dt><dd id="final-score">0</dd></div>
           <div><dt>Clean drops collected</dt><dd id="final-clean">0</dd></div>
           <div><dt>Time survived</dt><dd id="final-time">0s</dd></div>
+          <div><dt>Difficulty</dt><dd id="final-difficulty">Normal</dd></div>
         </dl>
         <div class="actions">
           <button id="again-btn" class="btn" type="button">Play Again</button>
@@ -56,8 +84,14 @@
         </div>
         <p class="message">Clean water changes lives.</p>
       </div>
-      <p class="brand">charity: water</p>
     </section>
+    <footer class="site-footer">
+      <p class="brand"><span aria-hidden="true">💧</span> charity: water</p>
+      <nav aria-label="charity: water links">
+        <a href="https://www.charitywater.org/" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">💻</span> Visit charity: water</a>
+        <a href="https://www.charitywater.org/donate" target="_blank" rel="noopener noreferrer"><span aria-hidden="true">💌</span> Donate</a>
+      </nav>
+    </footer>
   </main>
   <script src="script.js"></script>
 </body>

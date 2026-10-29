@@ -1,6 +1,15 @@
 const ROUND_SECONDS = 45;
 const START_HEARTS = 3;
-const WIN_TARGET = 24;
+const WIN_TARGETS = { easy: 16, normal: 24, hard: 32 };
+const DIFFICULTY_NAMES = { easy: "Easy", normal: "Normal", hard: "Hard" };
+const MILESTONES = [
+  { score: 5, message: "Great start! Keep it up!" },
+  { score: 10, message: "You're on a roll!" },
+  { score: 15, message: "Super catcher!" },
+  { score: 20, message: "Amazing work!" },
+  { score: 25, message: "Clean-water hero!" },
+  { score: 30, message: "Incredible catching!" }
+];
 const POLLUTED_CHANCE = 0.3;
 const BUCKET_KEY_SPEED = 520; // px per second
 
@@ -9,12 +18,20 @@ const screens = { welcome: $("screen-welcome"), playing: $("screen-game"), resul
 const playArea = $("play-area");
 const bucket = $("bucket");
 const hearts = Array.from(document.querySelectorAll(".heart"));
+const SOUND_CUES = {
+  button: { type: "sine", volume: 0.025, notes: [[660, 0.045, 0]] },
+  clean: { type: "sine", volume: 0.045, notes: [[587, 0.09, 0], [784, 0.11, 0.065], [988, 0.16, 0.13]] },
+  toxic: { type: "triangle", volume: 0.045, notes: [[196, 0.09, 0], [147, 0.12, 0.07]] },
+  win: { type: "sine", volume: 0.06, notes: [[523, 0.18, 0.16], [659, 0.18, 0.25], [784, 0.18, 0.34], [1047, 0.3, 0.43]] },
+  lose: { type: "triangle", volume: 0.05, notes: [[330, 0.16, 0.16], [247, 0.18, 0.29], [196, 0.25, 0.43]] }
+};
 
 let state = "welcome";
 let rafId = 0;
 let drops = [];
 let timeouts = [];
 let keys = { left: false, right: false };
+let audioContext;
 let g; // per-round data
 
 function showScreen(name) {
@@ -28,6 +45,46 @@ function later(fn, ms) {
     fn();
   }, ms);
   timeouts.push(id);
+}
+
+function getAudioContext() {
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) return null;
+
+  try {
+    if (!audioContext) audioContext = new AudioContext();
+    if (audioContext.state === "suspended") audioContext.resume().catch(() => {});
+    return audioContext;
+  } catch {
+    return null;
+  }
+}
+
+function playSound(name) {
+  const cue = SOUND_CUES[name];
+  const context = getAudioContext();
+  if (!cue || !context) return;
+
+  try {
+    const now = context.currentTime;
+
+    cue.notes.forEach(([frequency, duration, offset]) => {
+      const start = now + offset;
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = cue.type;
+      oscillator.frequency.setValueAtTime(frequency, start);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(cue.volume, start + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(start);
+      oscillator.stop(start + duration + 0.01);
+    });
+  } catch {
+    return;
+  }
 }
 
 function areaSize() {
@@ -44,8 +101,11 @@ function setBucketX(x) {
 function startRound() {
   cleanup();
   showScreen("playing");
-  g = { hearts: START_HEARTS, clean: 0, startTime: 0, last: 0, spawnTimer: 0, bucketX: 0, dragging: false, elapsed: 0 };
-  $("score").textContent = "0";
+  const difficulty = document.querySelector('input[name="difficulty"]:checked').value;
+  g = { hearts: START_HEARTS, clean: 0, target: WIN_TARGETS[difficulty], difficulty, startTime: 0, last: 0, spawnTimer: 0, bucketX: 0, dragging: false, elapsed: 0 };
+  $("score").textContent = `0 / ${g.target}`;
+  $("milestone").textContent = "";
+  $("milestone").classList.remove("visible");
   $("time").textContent = ROUND_SECONDS;
   $("score").classList.remove("bump");
   playArea.classList.remove("hit");
@@ -80,6 +140,8 @@ function cleanup() {
   drops.forEach((d) => d.el.remove());
   drops = [];
   playArea.querySelectorAll(".splash").forEach((s) => s.remove());
+  playArea.querySelectorAll(".bucket-burst").forEach((s) => s.remove());
+  bucket.querySelectorAll(".bucket-splash").forEach((s) => s.remove());
   document.querySelectorAll(".fx").forEach((f) => f.remove());
   screens.results.classList.remove("win", "lose");
 }
@@ -138,6 +200,19 @@ function onKeyUp(e) {
 function renderHearts() {
   hearts.forEach((h, i) => h.classList.toggle("lost", i >= g.hearts));
   $("hearts").setAttribute("aria-label", g.hearts + (g.hearts === 1 ? " heart left" : " hearts left"));
+}
+
+function showMilestone() {
+  const milestone = MILESTONES.find((item) => item.score === g.clean);
+  if (!milestone) return;
+
+  const message = $("milestone");
+  message.textContent = milestone.message;
+  message.classList.add("visible");
+  later(() => {
+    message.classList.remove("visible");
+    message.textContent = "";
+  }, 1500);
 }
 
 function spawnDrop(elapsed) {
@@ -204,9 +279,52 @@ function removeDrop(d) {
   drops = drops.filter((x) => x !== d);
 }
 
+function showCatchReaction(type) {
+  const bucketSplash = document.createElement("span");
+  bucketSplash.className = `bucket-splash ${type}`;
+  bucket.appendChild(bucketSplash);
+
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    later(() => bucketSplash.remove(), 220);
+    return;
+  }
+
+  const splash = document.createElement("div");
+  splash.className = `splash ${type}`;
+  splash.setAttribute("aria-hidden", "true");
+  splash.style.left = g.bucketX + "px";
+  splash.style.bottom = bucket.offsetHeight + 6 + "px";
+  playArea.appendChild(splash);
+  const burst = document.createElement("div");
+  burst.className = `bucket-burst ${type}`;
+  burst.setAttribute("aria-hidden", "true");
+  burst.style.left = g.bucketX + "px";
+  burst.style.bottom = bucket.offsetHeight + 6 + "px";
+  const droplets = [
+    [-26, -18, -50], [-18, -29, -30], [-9, -38, -15],
+    [0, -42, 0], [10, -37, 15], [20, -29, 30], [27, -17, 50]
+  ];
+  droplets.forEach(([x, y, rotation], index) => {
+    const droplet = document.createElement("span");
+    droplet.style.setProperty("--dx", x + "px");
+    droplet.style.setProperty("--dy", y + "px");
+    droplet.style.setProperty("--turn", rotation + "deg");
+    droplet.style.setProperty("--delay", index * 25 + "ms");
+    burst.appendChild(droplet);
+  });
+  playArea.appendChild(burst);
+  later(() => {
+    splash.remove();
+    bucketSplash.remove();
+    burst.remove();
+  }, 450);
+}
+
 // Returns true when the round ended.
 function catchDrop(d) {
   if (d.polluted) {
+    playSound("toxic");
+    showCatchReaction("polluted");
     g.hearts--;
     renderHearts();
     playArea.classList.remove("hit");
@@ -220,17 +338,14 @@ function catchDrop(d) {
     return false;
   }
   g.clean++;
+  playSound("clean");
   const score = $("score");
-  score.textContent = g.clean;
+  score.textContent = `${g.clean} / ${g.target}`;
+  showMilestone();
   score.classList.add("bump");
   later(() => score.classList.remove("bump"), 400);
-  const splash = document.createElement("div");
-  splash.className = "splash";
-  splash.style.left = g.bucketX + "px";
-  splash.style.bottom = bucket.offsetHeight + 6 + "px";
-  playArea.appendChild(splash);
-  later(() => splash.remove(), 450);
-  if (g.clean >= WIN_TARGET) {
+  showCatchReaction("clean");
+  if (g.clean >= g.target) {
     endRound(true);
     return true;
   }
@@ -239,12 +354,14 @@ function catchDrop(d) {
 
 function endRound(won) {
   if (state !== "playing") return;
-  const { clean, elapsed } = g;
+  playSound(won ? "win" : "lose");
+  const { clean, elapsed, difficulty } = g;
   cleanup();
   $("result-title").textContent = won ? "Nice catch!" : "Game Over";
   $("final-score").textContent = clean;
   $("final-clean").textContent = clean;
   $("final-time").textContent = elapsed.toFixed(1) + "s";
+  $("final-difficulty").textContent = DIFFICULTY_NAMES[difficulty];
   showScreen("results");
   dramaticEnd(won);
   $("again-btn").focus();
@@ -260,3 +377,6 @@ $("start-btn").addEventListener("click", startRound);
 $("again-btn").addEventListener("click", startRound);
 $("reset-btn").addEventListener("click", startRound);
 $("home-btn").addEventListener("click", goHome);
+document.addEventListener("click", (event) => {
+  if (event.target instanceof Element && event.target.closest("button")) playSound("button");
+});
